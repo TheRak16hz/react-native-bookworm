@@ -5,103 +5,129 @@ import jwt from "jsonwebtoken";
 const router = express.Router();
 
 const generateToken = (userId) => {
-    jwt.sign({ userId }, process.env.JWT_SECRET, {expiresIn: "15d"})
+    if (!process.env.JWT_SECRET) {
+        console.error("ERROR: JWT_SECRET no está definido en las variables de entorno para generateToken.");
+        throw new Error("JWT_SECRET no configurado en el servidor.");
+    }
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "15d" });
+    console.log("Backend: Token generado para userId:", userId, "->", token);
+    return token;
 }
 
+// Ruta de Registro
 router.post("/register", async (req, res) => {
     try {
         const { cedula, email, password } = req.body;
+
+        // ** VALIDACIONES DE ENTRADA **
         if (!cedula || !email || !password) {
-            return res.status(400).json({ message: "All fields are required" });
+            return res.status(400).json({ message: "Todos los campos son requeridos." });
         }
 
         if (password.length < 6) {
-            return res.status(400).json({ message: "Password must be at least 6 characters" });
+            return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres." });
         }
 
-        if (cedula .length < 8) {
-            return res.status(400).json({ message: "Cedula must be at least 8 characters" });
+        if (cedula.length < 8) {
+            return res.status(400).json({ message: "La cédula debe tener al menos 8 caracteres." });
         }
 
-
-
+        // ** VERIFICAR EXISTENCIA DE USUARIO **
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
-            return res.status(400).json({ message: "Email already exists" });
+            return res.status(400).json({ message: "Este correo electrónico ya está registrado." });
         }
 
         const existingCedula = await User.findOne({ cedula });
         if (existingCedula) {
-            return res.status(400).json({ message: "Cedula already exists" });
+            return res.status(400).json({ message: "Esta cédula ya está registrada." });
         }
 
-        //get random avatar
+        // ** CREAR IMAGEN DE PERFIL (AVATAR) **
+        // Asegúrate de que esta URL sea correcta y accesible
         const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${cedula}`;
 
+        // ** CREAR NUEVO USUARIO **
+        // La contraseña se hashea automáticamente con el hook pre-save en el modelo User
         const user = new User({
             cedula,
             email,
             password,
+            profileImage, // Asignar la imagen de perfil
         });
 
-        await user.save();
+        await user.save(); // Esto activará el pre-save hook para hashear la contraseña
 
-        const token = generateToken(user._id);
+        // ** GENERAR TOKEN Y RESPONDER **
+        const token = generateToken(user._id); // Usamos user._id, que es el ID de Mongoose
 
+        console.log("Backend: Registro exitoso. Respondiendo con token y usuario.");
         res.status(201).json({
-            token,
+            token: token,
             user: {
                 _id: user._id,
-                id: user.id,
+                id: user.id, // Incluir el ID autoincremental si es relevante para el frontend
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
             }
-        })
+        });
+
     } catch (error) {
-        console.log("Error in register route", error);
-        res.status(500).json({ message: "Internal Server error" });
+        console.error("Error en la ruta de registro:", error);
+        // Verificar si el error es de Mongoose (por ejemplo, por validación o guardado)
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+        res.status(500).json({ message: "Error interno del servidor al registrar." });
     }
 });
 
+// Ruta de Login
 router.post("/login", async (req, res) => {
     try {
         const { cedula, password } = req.body;
-        
+
+        // ** VALIDACIONES DE ENTRADA **
         if (!cedula || !password) {
-            return res.status(400).json({ message: "All fields are required" });
+            return res.status(400).json({ message: "Todos los campos son requeridos para iniciar sesión." });
         }
 
-        //check if user exists
+        // ** VERIFICAR SI EL USUARIO EXISTE **
         const user = await User.findOne({ cedula });
         if (!user) {
-            return res.status(400).json({ message: "User does not exist" });
+            return res.status(400).json({ message: "Cédula o contraseña inválida." });
         }
 
-        //check if password is correct
+        // ** VERIFICAR CONTRASEÑA (USANDO EL MÉTODO comparePassword DEL MODELO) **
         const isPasswordCorrect = await user.comparePassword(password);
         if (!isPasswordCorrect) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(400).json({ message: "Cédula o contraseña inválida." });
         }
 
-        //generate token
+        // ** GENERAR TOKEN Y RESPONDER **
         const token = generateToken(user._id);
 
+        // Actualizar last_login
+        user.last_login = new Date();
+        await user.save({ validateBeforeSave: false }); // No validar de nuevo al actualizar last_login
+
+        console.log("Backend: Inicio de sesión exitoso. Respondiendo con token y usuario.");
         res.status(200).json({
-            token,
+            token: token,
             user: {
                 _id: user._id,
-                id: user.id,
+                id: user.id, // Incluir el ID autoincremental si es relevante para el frontend
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
             }
-        })
-
+        });
 
     } catch (error) {
-        console.log("Error in login route", error);
-        res.status(500).json({ message: "Internal Server error" });
+        console.error("Error en la ruta de inicio de sesión:", error);
+        res.status(500).json({ message: "Error interno del servidor al iniciar sesión." });
     }
 });
 
