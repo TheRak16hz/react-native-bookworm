@@ -44,11 +44,9 @@ router.post("/register", async (req, res) => {
         }
 
         // ** CREAR IMAGEN DE PERFIL (AVATAR) **
-        // Asegúrate de que esta URL sea correcta y accesible
         const profileImage = `https://api.dicebear.com/7.x/avataaars/svg?seed=${cedula}`;
 
         // ** CREAR NUEVO USUARIO **
-        // La contraseña se hashea automáticamente con el hook pre-save en el modelo User
         const user = new User({
             cedula,
             email,
@@ -70,12 +68,12 @@ router.post("/register", async (req, res) => {
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
-            }
+            },
+            message: "¡Registro completado exitosamente! Por favor, inicia sesión para continuar." // <-- ¡NUEVO MENSAJE DE ÉXITO!
         });
 
     } catch (error) {
         console.error("Error en la ruta de registro:", error);
-        // Verificar si el error es de Mongoose (por ejemplo, por validación o guardado)
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(val => val.message);
             return res.status(400).json({ message: messages.join(', ') });
@@ -122,7 +120,8 @@ router.post("/login", async (req, res) => {
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
-            }
+            },
+            message: "¡Inicio de sesión exitoso!" // Opcional: mensaje de éxito también para el login
         });
 
     } catch (error) {
