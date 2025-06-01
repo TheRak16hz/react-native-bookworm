@@ -5,11 +5,14 @@ import "dotenv/config"; // Asegúrate de que dotenv se cargue al inicio
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import { connectDB } from "./lib/db.js";
+import job from "./lib/cron.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // Middleware globales
+job.start();
 app.use(express.json()); // Para parsear el body de las solicitudes JSON
 app.use(cors());         // Para manejar las políticas de CORS
 
