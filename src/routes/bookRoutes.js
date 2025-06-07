@@ -10,7 +10,7 @@ router.post("/", protectRoute, async (req, res) => {
     try {
         const { title, caption, rating, image } = req.body;
 
-        if (!title || !caption || !rating || !image) {
+        if (!image || !title || !caption || !rating) {
             return res.status(400).json({ message: "Todos los campos son requeridos." });
         }
 

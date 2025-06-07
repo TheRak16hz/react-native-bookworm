@@ -85,23 +85,23 @@ router.post("/register", async (req, res) => {
 // Ruta de Login
 router.post("/login", async (req, res) => {
     try {
-        const { cedula, password } = req.body;
+        const { email, password } = req.body;
 
         // ** VALIDACIONES DE ENTRADA **
-        if (!cedula || !password) {
-            return res.status(400).json({ message: "Todos los campos son requeridos para iniciar sesión." });
+        if (!email || !password) {
+            return res.status(400).json({ message: "Todos los campos son requeridos para iniciar sesión. (validacion de entrada)" });
         }
 
         // ** VERIFICAR SI EL USUARIO EXISTE **
-        const user = await User.findOne({ cedula });
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: "Cédula o contraseña inválida." });
+            return res.status(400).json({ message: "Email o contraseña inválida." });
         }
 
         // ** VERIFICAR CONTRASEÑA (USANDO EL MÉTODO comparePassword DEL MODELO) **
         const isPasswordCorrect = await user.comparePassword(password);
         if (!isPasswordCorrect) {
-            return res.status(400).json({ message: "Cédula o contraseña inválida." });
+            return res.status(400).json({ message: "Email o contraseña inválida." });
         }
 
         // ** GENERAR TOKEN Y RESPONDER **
