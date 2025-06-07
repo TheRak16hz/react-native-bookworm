@@ -88,6 +88,7 @@ router.post("/login", async (req, res) => {
         const { email, password } = req.body;
 
         // ** VALIDACIONES DE ENTRADA **
+        //cambio de cedula a email
         if (!email || !password) {
             return res.status(400).json({ message: "Todos los campos son requeridos para iniciar sesión. (validacion de entrada)" });
         }
