@@ -24,7 +24,7 @@ const bookSchema = new mongoose.Schema(
     //reference to the user who created the book using the User model
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "accounts_customuser", // Assuming the User model is named "User"
         required: true,
     },
 
