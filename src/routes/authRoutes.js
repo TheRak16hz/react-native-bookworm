@@ -69,6 +69,7 @@ router.post("/register", async (req, res) => {
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
+                createdAt: new Date(),
             },
             message: "¡Registro completado exitosamente! Por favor, inicia sesión para continuar." // <-- ¡NUEVO MENSAJE DE ÉXITO!
         });
@@ -122,6 +123,7 @@ router.post("/login", async (req, res) => {
                 cedula: user.cedula,
                 email: user.email,
                 profileImage: user.profileImage,
+                createdAt: user.createdAt,
             },
             message: "¡Inicio de sesión exitoso!" // Opcional: mensaje de éxito también para el login
         });

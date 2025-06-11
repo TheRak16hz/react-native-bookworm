@@ -68,6 +68,19 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
+//get recommended books by the logged user <---- FALTABA
+router.get("/user", protectRoute, async (req, res) => {
+  try {
+    const books = await Book.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(books);
+  } catch (error) {
+    console.error("Get user books error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
 // Eliminar un libro
 router.delete("/:id", protectRoute, async (req, res) => {
     try {
