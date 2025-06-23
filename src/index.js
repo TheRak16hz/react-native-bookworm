@@ -4,6 +4,14 @@ import "dotenv/config"; // Asegúrate de que dotenv se cargue al inicio
 
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
+//importar las rutas para luego usarlas
+import studentRoutes from './routes/studentRoutes.js';
+import staffRoutes from './routes/staffRoutes.js';
+
+
+
+
+
 import { connectDB } from "./lib/db.js";
 import job from "./lib/cron.js";
 
@@ -24,6 +32,10 @@ app.get('/', (req, res) => {
 // Rutas de la API
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+
+//CRITICO, añadir las rutas nuevas
+app.use("/api/students", studentRoutes);
+app.use("/api/staff", staffRoutes);
 
 // ** CORRECCIÓN CRÍTICA: Conectar a la DB antes de iniciar el servidor **
 const startServer = async () => {

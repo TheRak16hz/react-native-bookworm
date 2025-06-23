@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs'; // <-- NOTA: Este import es redundante si solo usas PBKDF2. Lo dejo para discusión.
+
 import AutoIncrement from 'mongoose-sequence';
 import { pbkdf2 } from 'crypto';
 import { promisify } from 'util';
@@ -81,14 +81,8 @@ accounts_customuser.pre("save", async function (next) {
 
 // === MÉTODO PARA COMPARAR LA CONTRASEÑA EN EL LOGIN CON PBKDF2 ===
 accounts_customuser.methods.comparePassword = async function (candidatePassword) {
-    // Si la contraseña almacenada no tiene el formato PBKDF2, intenta comparar con bcryptjs
-    // (Solo si realmente tienes contraseñas hasheadas con bcryptjs en tu DB)
-    // Pero si tu intención es solo PBKDF2, puedes eliminar este `if`
     if (!this.password.startsWith('pbkdf2_')) {
-        console.warn("User.comparePassword: La contraseña almacenada no tiene formato PBKDF2. Intentando con bcrypt.");
-        // Si hay contraseñas antiguas hasheadas con bcrypt, esto las manejaría
-        // Asegúrate de que `bcrypt` esté importado y que `this.password` sea el hash de bcrypt
-        // return await bcrypt.compare(candidatePassword, this.password);
+        console.warn("User.comparePassword: La contraseña almacenada no tiene formato PBKDF2.");
         return false; // Si solo quieres PBKDF2, cualquier otro formato es inválido.
     }
 
@@ -108,10 +102,6 @@ accounts_customuser.methods.comparePassword = async function (candidatePassword)
     const storedHashBase64 = parts[3];
     const keylen = 32; // Debe coincidir con la longitud usada para hashear
 
-    // console.log('PBKDF2 Digest:', digest); // Para depuración
-    // console.log('PBKDF2 Iterations:', iterations);
-    // console.log('PBKDF2 Salt:', salt);
-    // console.log('PBKDF2 Stored Hash:', storedHashBase64);
 
     try {
         // Generar el hash de la contraseña candidata con los mismos parámetros

@@ -1,60 +1,62 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Staff from '../models/Staff.js'; // Importamos Staff
 
 const protectRoute = async (req, res, next) => {
-    let token; // Declara el token aquí para un alcance más amplio
+    let token;
 
     try {
-        // 1. Obtener el token de los headers de autorización
-        // Se espera un formato "Bearer <TOKEN>"
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
         }
 
-        // Si no hay token o no está en el formato esperado
         if (!token) {
-            console.warn("Middleware: No se recibió token de autenticación o formato incorrecto.");
+            console.warn("No token provided");
             return res.status(401).json({ message: "No authentication token, access denied" });
         }
 
-        // 2. Verificar que JWT_SECRET esté definido antes de usarlo
-        if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length === 0) {
-            console.error("Middleware ERROR: JWT_SECRET no está definido o está vacío. Por favor, configura esta variable de entorno.");
-            // Evita que el servidor colapse si la configuración es incorrecta
-            return res.status(500).json({ message: "Error de configuración del servidor: JWT secret no establecido." });
+        if (!process.env.JWT_SECRET) {
+            console.error("JWT_SECRET missing");
+            return res.status(500).json({ message: "Server misconfiguration: JWT secret not set" });
         }
 
-        // 3. Verificar y decodificar el token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Middleware: Token decodificado exitosamente:", decoded); // Log para depuración
+        console.log("Token decoded:", decoded);
 
-        // 4. Encontrar el usuario en la base de datos
-        // Excluir la contraseña por seguridad al adjuntar el usuario a la solicitud
-        const user = await User.findById(decoded.userId).select("-password");
-
-        // 5. Verificar si el usuario existe para el ID decodificado
+        let user = await User.findById(decoded.userId).select("-password");
         if (!user) {
-            console.warn("Middleware: Usuario no encontrado para el ID decodificado en el token:", decoded.userId);
+            // Si no es un User normal, busca en Staff
+            user = await Staff.findById(decoded.staffId).select("-password");
+        }
+
+        if (!user) {
+            console.warn("User not found");
             return res.status(401).json({ message: "Token is not valid (user not found)" });
         }
 
-        // 6. Adjuntar el usuario a la solicitud para uso en las rutas subsiguientes
         req.user = user;
-        next(); // Continuar con la siguiente función del middleware o la ruta
+        req.role = decoded.role || null; // Incluimos el role del token
+        next();
     } catch (error) {
-        // Captura y maneja errores específicos de JWT
-        console.error("Authentication error in middleware:", error); // Loggea el objeto error completo
-
-        let errorMessage = "Token is not valid.";
+        console.error("Auth error:", error);
+        let msg = "Token is not valid.";
         if (error.name === 'TokenExpiredError') {
-            errorMessage = "Token has expired. Please log in again.";
+            msg = "Token has expired. Please log in again.";
         } else if (error.name === 'JsonWebTokenError') {
-            errorMessage = `Invalid token: ${error.message}.`;
+            msg = `Invalid token: ${error.message}.`;
         }
-        // Puedes agregar más casos si necesitas manejar otros errores específicos (ej. NotBeforeError)
-
-        return res.status(401).json({ message: errorMessage });
+        return res.status(401).json({ message: msg });
     }
+};
+
+// Nuevo: Middleware para validar roles
+export const authorizeRoles = (...allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.role || !allowedRoles.includes(req.role)) {
+            return res.status(403).json({ message: "You do not have permission to perform this action." });
+        }
+        next();
+    };
 };
 
 export default protectRoute;
