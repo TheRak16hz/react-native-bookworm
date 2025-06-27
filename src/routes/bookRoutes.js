@@ -1,7 +1,7 @@
 import express from "express";
 import cloudinary from "../lib/cloudinary.js";
 import protectRoute from "../middleware/auth.middleware.js";
-import Book from "../models/Book.js"; // <-- ¡CORRECCIÓN CRÍTICA: Importar el modelo Book!
+import Book from "../models/Book.js"; // <-- ¡CORRECCIÓN CRÍTICA: Importar Book!
 
 const router = express.Router();
 

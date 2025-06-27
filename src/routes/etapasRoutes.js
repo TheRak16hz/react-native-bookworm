@@ -1,24 +1,21 @@
 import express from 'express';
-import Etapa from '../models/Etapa.js'; // tu modelo etapas_info
-import protectRoute from '../middlewares/authMiddleware.js';
+import Etapa from '../models/Etapa.js';
+import protectRoute from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Obtener etapa por nombre
-router.get('/:etapa', protectRoute, async (req, res) => {
+// Obtener todas las etapas
+router.get('/', protectRoute, async (req, res) => {
   try {
-    const etapa = await Etapa.findOne({ etapa: req.params.etapa });
-    if (!etapa) {
-      return res.status(404).json({ message: 'Etapa no encontrada' });
-    }
-    res.json(etapa);
+    const etapas = await Etapa.find();
+    res.json(etapas);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error al obtener la etapa' });
+    res.status(500).json({ message: 'Error al obtener las etapas' });
   }
 });
 
-// Crear etapa
+// Crear una etapa
 router.post('/', protectRoute, async (req, res) => {
   try {
     const { etapa, fecha_inicio, fecha_fin, jurado } = req.body;
@@ -44,28 +41,14 @@ router.post('/', protectRoute, async (req, res) => {
   }
 });
 
-// Actualizar etapa
-router.put('/:etapa', protectRoute, async (req, res) => {
-  try {
-    const updated = await Etapa.findOneAndUpdate(
-      { etapa: req.params.etapa },
-      req.body,
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ message: 'Etapa no encontrada' });
-    res.json(updated);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error al actualizar la etapa' });
-  }
-});
-
-// Eliminar etapa
+// Eliminar una etapa por nombre
 router.delete('/:etapa', protectRoute, async (req, res) => {
   try {
     const deleted = await Etapa.findOneAndDelete({ etapa: req.params.etapa });
-    if (!deleted) return res.status(404).json({ message: 'Etapa no encontrada' });
-    res.json({ message: 'Etapa eliminada' });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Etapa no encontrada' });
+    }
+    res.json({ message: 'Etapa eliminada correctamente' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al eliminar la etapa' });

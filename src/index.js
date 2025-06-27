@@ -4,13 +4,11 @@ import "dotenv/config"; // Asegúrate de que dotenv se cargue al inicio
 
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
-//importar las rutas para luego usarlas
-import studentRoutes from './routes/studentRoutes.js';
-import staffRoutes from './routes/staffRoutes.js';
-
-
-
-
+import studentRoutes from './routes/studentRoutes.js'; //importamos student
+import staffRoutes from './routes/staffRoutes.js'; // importamos staff
+import etapasRoutes from './routes/etapasRoutes.js';      // <-- Importa etapas
+import profesoresRoutes from './routes/profesoresRoutes.js'; // <-- Importa profesores
+import postsRoutes from './routes/postsRoutes.js' // importamos posts
 
 import { connectDB } from "./lib/db.js";
 import job from "./lib/cron.js";
@@ -18,13 +16,12 @@ import job from "./lib/cron.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 // Middleware globales
 job.start();
 app.use(express.json()); // Para parsear el body de las solicitudes JSON
 app.use(cors());         // Para manejar las políticas de CORS
 
-// Definir una ruta raíz simple para verificar que el servidor está activo
+// Ruta raíz para verificar el servidor
 app.get('/', (req, res) => {
     res.send('Servidor Bookworm API está funcionando!');
 });
@@ -32,22 +29,23 @@ app.get('/', (req, res) => {
 // Rutas de la API
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/students", studentRoutes); // ruta para estudiantes
+app.use("/api/staff", staffRoutes); // ruta para staff
+app.use("/api/etapas", etapasRoutes);          // <-- Añade la ruta de etapas
+app.use("/api/profesores", profesoresRoutes);  // <-- Añade la ruta de profesores
+app.use("/api/posts", postsRoutes); // ruta para posts
 
-//CRITICO, añadir las rutas nuevas
-app.use("/api/students", studentRoutes);
-app.use("/api/staff", staffRoutes);
-
-// ** CORRECCIÓN CRÍTICA: Conectar a la DB antes de iniciar el servidor **
+// Conectar a la DB antes de iniciar el servidor
 const startServer = async () => {
     try {
-        await connectDB(); // Espera a que la base de datos se conecte
+        await connectDB(); 
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
     } catch (error) {
         console.error("Failed to connect to database or start server:", error);
-        process.exit(1); // Salir si hay un error crítico
+        process.exit(1); 
     }
 };
 
-startServer(); // Llama a la función para iniciar todo
+startServer(); 
