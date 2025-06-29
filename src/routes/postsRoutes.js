@@ -1,3 +1,5 @@
+// 1. Actualizamos postRoutes para incluir la ruta GET de todos los posts
+
 import express from "express";
 import cloudinary from "../lib/cloudinary.js";
 import protectRoute from "../middleware/auth.middleware.js";
@@ -14,7 +16,6 @@ router.post("/", protectRoute, async (req, res) => {
       return res.status(400).json({ message: "Todos los campos son requeridos." });
     }
 
-    // Subir a Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(image);
     const imageUrl = uploadResponse.secure_url;
 
@@ -41,6 +42,17 @@ router.get("/user", protectRoute, async (req, res) => {
     res.json(posts);
   } catch (error) {
     console.error("Error al obtener los posts:", error);
+    res.status(500).json({ message: "Error interno del servidor al obtener posts." });
+  }
+});
+
+// Obtener todos los posts públicos
+router.get("/", protectRoute, async (req, res) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 }).populate("user", "email profileImage");
+    res.json(posts);
+  } catch (error) {
+    console.error("Error al obtener todos los posts:", error);
     res.status(500).json({ message: "Error interno del servidor al obtener posts." });
   }
 });
