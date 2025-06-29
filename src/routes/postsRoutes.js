@@ -1,9 +1,8 @@
-// 1. Actualizamos postRoutes para incluir la ruta GET de todos los posts
-
 import express from "express";
 import cloudinary from "../lib/cloudinary.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import Post from "../models/Post.js";
+import Staff from "../models/Staff.js";
 
 const router = express.Router();
 
@@ -23,11 +22,10 @@ router.post("/", protectRoute, async (req, res) => {
       title,
       description,
       image: imageUrl,
-      user: req.user._id,
+      user: req.user._id, // viene del middleware de autenticación
     });
 
     await newPost.save();
-
     res.status(201).json(newPost);
   } catch (error) {
     console.error("Error al crear el post:", error);
@@ -35,7 +33,7 @@ router.post("/", protectRoute, async (req, res) => {
   }
 });
 
-// Obtener posts del usuario
+// Obtener los posts del usuario autenticado
 router.get("/user", protectRoute, async (req, res) => {
   try {
     const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1 });
@@ -46,11 +44,26 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
-// Obtener todos los posts públicos
+// Obtener todos los posts paginados
 router.get("/", protectRoute, async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 }).populate("user", "email profileImage");
-    res.json(posts);
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
+
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user"); // ← usamos "staff" automáticamente por el modelo
+
+    const totalPosts = await Post.countDocuments();
+
+    res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(totalPosts / limit),
+    });
   } catch (error) {
     console.error("Error al obtener todos los posts:", error);
     res.status(500).json({ message: "Error interno del servidor al obtener posts." });
@@ -71,7 +84,6 @@ router.delete("/:id", protectRoute, async (req, res) => {
       try {
         const publicId = post.image.split("/").pop().split(".")[0];
         await cloudinary.uploader.destroy(publicId);
-        console.log("Imagen eliminada de Cloudinary:", publicId);
       } catch (deleteError) {
         console.error("Error al eliminar imagen Cloudinary:", deleteError);
       }

@@ -18,7 +18,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware globales
 job.start();
-app.use(express.json()); // Para parsear el body de las solicitudes JSON
+
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
+
 app.use(cors());         // Para manejar las políticas de CORS
 
 // Ruta raíz para verificar el servidor
@@ -38,14 +41,14 @@ app.use("/api/posts", postsRoutes); // ruta para posts
 // Conectar a la DB antes de iniciar el servidor
 const startServer = async () => {
     try {
-        await connectDB(); 
+        await connectDB();
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
     } catch (error) {
         console.error("Failed to connect to database or start server:", error);
-        process.exit(1); 
+        process.exit(1);
     }
 };
 
-startServer(); 
+startServer();

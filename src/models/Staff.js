@@ -6,7 +6,7 @@ import crypto from 'crypto';
 const pbkdf2Async = promisify(pbkdf2);
 
 const staff = new mongoose.Schema({
-  id: { type: Number, unique: true }, 
+  id: { type: Number, unique: true },
   cedula: { type: String, required: true, unique: true },
   nombre: { type: String, required: true },
   apellido: { type: String, required: true },
@@ -70,6 +70,6 @@ staff.methods.comparePassword = async function(candidatePassword) {
   }
 };
 
-const Staff = mongoose.model('staff', staff);
+const Staff = mongoose.model('Staff', staff);
 
 export default Staff;
