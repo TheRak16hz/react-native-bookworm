@@ -33,14 +33,19 @@ router.post("/", protectRoute, async (req, res) => {
   }
 });
 
-// Obtener los posts del usuario autenticado
-router.get("/user", protectRoute, async (req, res) => {
+// Obtener un post por ID
+router.get('/:id', protectRoute, async (req, res) => {
   try {
-    const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1 });
-    res.json(posts);
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post no encontrado' });
+    }
+
+    res.json(post);
   } catch (error) {
-    console.error("Error al obtener los posts:", error);
-    res.status(500).json({ message: "Error interno del servidor al obtener posts." });
+    console.error('Error al obtener post por ID:', error);
+    res.status(500).json({ message: 'Error al obtener el post.' });
   }
 });
 
@@ -69,6 +74,33 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor al obtener posts." });
   }
 });
+
+// UPDATE post
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post no encontrado." });
+
+    if (post.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "No autorizado para actualizar este post." });
+    }
+
+    const { title, description } = req.body;
+    if (!title || !description) {
+      return res.status(400).json({ message: "Título y descripción requeridos." });
+    }
+
+    post.title = title;
+    post.description = description;
+    await post.save();
+
+    res.json(post);
+  } catch (error) {
+    console.error("Error al actualizar el post:", error);
+    res.status(500).json({ message: "Error interno al actualizar el post." });
+  }
+});
+
 
 // Eliminar post
 router.delete("/:id", protectRoute, async (req, res) => {
