@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
 import formidable from "formidable";
+import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
 
